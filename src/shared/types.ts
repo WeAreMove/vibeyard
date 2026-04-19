@@ -127,6 +127,23 @@ export interface ProjectInsightsData {
   dismissed: string[];
 }
 
+export interface WorkspaceConfig {
+  devName: string;
+  projectName: string;
+}
+
+export interface WorkspacePodInfo {
+  projectName: string;
+  podName: string;
+  ready: boolean;
+}
+
+export interface WorkspaceInfo {
+  devName: string;
+  namespace: string;
+  pods: WorkspacePodInfo[];
+}
+
 export interface ProjectRecord {
   id: string;
   name: string;
@@ -144,6 +161,7 @@ export interface ProjectRecord {
   terminalPanelOpen?: boolean;
   terminalPanelHeight?: number;
   readiness?: ReadinessResult;
+  workspace?: WorkspaceConfig;
 }
 
 export interface Preferences {

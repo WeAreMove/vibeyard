@@ -1,12 +1,13 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron';
-import type { CostData, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig } from '../shared/types';
+import type { CostData, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, WorkspaceConfig, WorkspaceInfo } from '../shared/types';
 import { ZOOM_MIN, ZOOM_MAX } from '../shared/types';
 
-export type { CostData } from '../shared/types';
+export type { CostData, WorkspaceInfo } from '../shared/types';
 
 export interface VibeyardApi {
   pty: {
     create(sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs?: string, providerId?: ProviderId, initialPrompt?: string): Promise<void>;
+    createWorkspace(sessionId: string, workspace: WorkspaceConfig, extraArgs?: string): Promise<void>;
     createShell(sessionId: string, cwd: string): Promise<void>;
     write(sessionId: string, data: string): void;
     resize(sessionId: string, cols: number, rows: number): void;
@@ -112,6 +113,10 @@ export interface VibeyardApi {
     reinstall(providerId?: ProviderId): Promise<{ success: boolean }>;
     validate(providerId?: ProviderId): Promise<SettingsValidationResult>;
   };
+  workspace: {
+    list(): Promise<WorkspaceInfo[]>;
+    podStatus(devName: string, projectName: string): Promise<'running' | 'stopped' | 'unknown'>;
+  };
   zoom: {
     set(factor: number): void;
   };
@@ -140,6 +145,8 @@ const api: VibeyardApi = {
   pty: {
     create: (sessionId, cwd, cliSessionId, isResume, extraArgs, providerId, initialPrompt) =>
       ipcRenderer.invoke('pty:create', sessionId, cwd, cliSessionId, isResume, extraArgs || '', providerId || 'claude', initialPrompt),
+    createWorkspace: (sessionId, workspace, extraArgs) =>
+      ipcRenderer.invoke('pty:createWorkspace', sessionId, workspace, extraArgs || ''),
     createShell: (sessionId, cwd) =>
       ipcRenderer.invoke('pty:createShell', sessionId, cwd),
     write: (sessionId, data) =>
@@ -264,6 +271,10 @@ const api: VibeyardApi = {
     respondConflictDialog: (choice) => ipcRenderer.send('settings:conflictDialogResponse', choice),
     reinstall: (providerId) => ipcRenderer.invoke('settings:reinstall', providerId || 'claude'),
     validate: (providerId) => ipcRenderer.invoke('settings:validate', providerId || 'claude'),
+  },
+  workspace: {
+    list: () => ipcRenderer.invoke('workspace:list'),
+    podStatus: (devName, projectName) => ipcRenderer.invoke('workspace:podStatus', devName, projectName),
   },
   zoom: {
     set: (factor: number) => {

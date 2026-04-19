@@ -83,9 +83,12 @@ function render(): void {
   for (const project of appState.projects) {
     const el = document.createElement('div');
     el.className = 'project-item' + (project.id === appState.activeProjectId ? ' active' : '');
+    const workspaceBadge = project.workspace
+      ? ` <span class="workspace-badge" title="dev-${esc(project.workspace.devName)} / ws-${esc(project.workspace.projectName)}-0">&#9729;</span>`
+      : '';
     el.innerHTML = `
       <div style="flex:1;min-width:0">
-        <div class="project-name${hasUnreadInProject(project.id) ? ' unread' : ''}">${esc(project.name)}${project.sessions.length ? ` <span class="project-session-count">(${project.sessions.length})</span>` : ''}</div>
+        <div class="project-name${hasUnreadInProject(project.id) ? ' unread' : ''}">${esc(project.name)}${workspaceBadge}${project.sessions.length ? ` <span class="project-session-count">(${project.sessions.length})</span>` : ''}</div>
         <div class="project-path">${esc(project.path)}</div>
       </div>
       <span class="project-delete" title="Remove project">&times;</span>
@@ -126,6 +129,8 @@ export function promptNewProject(): void {
         autoFillName(dir);
       },
     },
+    { label: 'Dev Namespace (optional)', id: 'workspace-dev', placeholder: 'e.g. yoni' },
+    { label: 'Container Project (optional)', id: 'workspace-project', placeholder: 'e.g. travelyo' },
   ], async (values) => {
     const name = values['project-name']?.trim();
     const rawPath = values['project-path']?.trim();
@@ -138,8 +143,12 @@ export function promptNewProject(): void {
       return;
     }
 
+    const devName = values['workspace-dev']?.trim();
+    const workspaceProject = values['workspace-project']?.trim();
+    const workspace = devName && workspaceProject ? { devName, projectName: workspaceProject } : undefined;
+
     closeModal();
-    appState.addProject(name, projectPath);
+    appState.addProject(name, projectPath, workspace);
   });
 
   const nameInput = document.getElementById('modal-project-name') as HTMLInputElement | null;

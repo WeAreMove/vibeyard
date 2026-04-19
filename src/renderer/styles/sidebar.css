@@ -229,3 +229,12 @@
 .update-banner-btn.hidden {
   display: none;
 }
+
+.workspace-badge {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  color: #4285f4;
+  vertical-align: middle;
+  opacity: 0.85;
+}

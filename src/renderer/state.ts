@@ -1,5 +1,5 @@
 import type { VibeyardApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult } from '../shared/types.js';
+import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult, WorkspaceConfig } from '../shared/types.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
@@ -280,7 +280,7 @@ class AppState {
     this.emit('project-changed');
   }
 
-  addProject(name: string, path: string): ProjectRecord {
+  addProject(name: string, path: string, workspace?: WorkspaceConfig): ProjectRecord {
     const project: ProjectRecord = {
       id: crypto.randomUUID(),
       name,
@@ -288,6 +288,7 @@ class AppState {
       sessions: [],
       activeSessionId: null,
       layout: { mode: 'swarm', splitPanes: [], splitDirection: 'horizontal' },
+      ...(workspace ? { workspace } : {}),
     };
     this.state.projects.push(project);
     this.state.activeProjectId = project.id;

@@ -3,7 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { spawnPty, spawnShellPty, writePty, resizePty, killPty, isSilencedExit, getPtyCwd } from './pty-manager';
+import { spawnPty, spawnShellPty, spawnWorkspacePty, writePty, resizePty, killPty, isSilencedExit, getPtyCwd } from './pty-manager';
+import { listWorkspaces, getPodStatus } from './workspace-manager';
+import type { WorkspaceConfig } from '../shared/types';
 import { addMcpServer, removeMcpServer } from './claude-cli';
 import type { McpServerConfig } from './claude-cli';
 import { loadState, saveState, PersistedState } from './store';
@@ -145,6 +147,32 @@ export function registerIpcHandlers(): void {
       }
     );
   });
+
+  ipcMain.handle('pty:createWorkspace', async (_event, sessionId: string, workspace: WorkspaceConfig, extraArgs: string) => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+
+    await spawnWorkspacePty(
+      sessionId,
+      workspace,
+      extraArgs,
+      (data) => {
+        const w = BrowserWindow.getAllWindows()[0];
+        if (w && !w.isDestroyed()) w.webContents.send('pty:data', sessionId, data);
+      },
+      (exitCode, signal) => {
+        if (isSilencedExit(sessionId)) return;
+        const w = BrowserWindow.getAllWindows()[0];
+        if (w && !w.isDestroyed()) w.webContents.send('pty:exit', sessionId, exitCode, signal);
+      },
+    );
+  });
+
+  ipcMain.handle('workspace:list', () => listWorkspaces());
+
+  ipcMain.handle('workspace:podStatus', (_event, devName: string, projectName: string) =>
+    getPodStatus(devName, projectName)
+  );
 
   ipcMain.on('pty:write', (_event, sessionId: string, data: string) => {
     writePty(sessionId, data);

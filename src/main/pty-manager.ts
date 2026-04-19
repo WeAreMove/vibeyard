@@ -2,11 +2,12 @@ import * as pty from 'node-pty';
 import { execSync, execFile } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
-import type { ProviderId } from '../shared/types';
+import type { ProviderId, WorkspaceConfig } from '../shared/types';
 import { getProvider } from './providers/registry';
 import { registerSession } from './hook-status';
 import { isWin, pathSep } from './platform';
 import { nvmDefaultNodeBinDir } from './providers/nvm';
+import { buildWorkspaceKubectlArgs } from './workspace-manager';
 
 interface PtyInstance {
   process: pty.IPty;
@@ -310,6 +311,43 @@ export function spawnShellPty(
   ptyProcess.onData((data) => onData(data));
   ptyProcess.onExit(({ exitCode, signal }) => {
     ptys.delete(sessionId);
+    onExit(exitCode, signal);
+  });
+
+  ptys.set(sessionId, { process: ptyProcess, sessionId });
+}
+
+export async function spawnWorkspacePty(
+  sessionId: string,
+  workspace: WorkspaceConfig,
+  extraArgs: string,
+  onData: (data: string) => void,
+  onExit: (exitCode: number, signal?: number) => void,
+): Promise<void> {
+  if (ptys.has(sessionId)) {
+    silencedExits.add(sessionId);
+    killPty(sessionId);
+  }
+
+  const claudeArgs = extraArgs ? extraArgs.split(/\s+/).filter(Boolean) : [];
+  const kubectlArgs = buildWorkspaceKubectlArgs(workspace, sessionId, claudeArgs);
+
+  const env = { ...process.env, PATH: getFullPath() };
+
+  const ptyProcess = pty.spawn('kubectl', kubectlArgs, {
+    name: 'xterm-256color',
+    cols: 120,
+    rows: 30,
+    cwd: os.homedir(),
+    env,
+  });
+
+  ptyProcess.onData((data) => onData(data));
+  ptyProcess.onExit(({ exitCode, signal }) => {
+    const current = ptys.get(sessionId);
+    if (current?.process === ptyProcess) {
+      ptys.delete(sessionId);
+    }
     onExit(exitCode, signal);
   });
 
