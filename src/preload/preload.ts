@@ -116,6 +116,8 @@ export interface VibeyardApi {
   workspace: {
     list(): Promise<WorkspaceInfo[]>;
     podStatus(devName: string, projectName: string): Promise<'running' | 'stopped' | 'unknown'>;
+    scalePod(devName: string, projectName: string, replicas: number): Promise<void>;
+    waitForPod(devName: string, projectName: string): Promise<void>;
   };
   zoom: {
     set(factor: number): void;
@@ -275,6 +277,8 @@ const api: VibeyardApi = {
   workspace: {
     list: () => ipcRenderer.invoke('workspace:list'),
     podStatus: (devName, projectName) => ipcRenderer.invoke('workspace:podStatus', devName, projectName),
+    scalePod: (devName, projectName, replicas) => ipcRenderer.invoke('workspace:scalePod', devName, projectName, replicas),
+    waitForPod: (devName, projectName) => ipcRenderer.invoke('workspace:waitForPod', devName, projectName),
   },
   zoom: {
     set: (factor: number) => {

@@ -85,6 +85,8 @@ export interface VibeyardApi {
   workspace: {
     list(): Promise<WorkspaceInfo[]>;
     podStatus(devName: string, projectName: string): Promise<'running' | 'stopped' | 'unknown'>;
+    scalePod(devName: string, projectName: string, replicas: number): Promise<void>;
+    waitForPod(devName: string, projectName: string): Promise<void>;
   };
   stats: {
     getCache(): Promise<StatsCache | null>;

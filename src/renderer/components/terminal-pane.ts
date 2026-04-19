@@ -375,6 +375,68 @@ export function destroyTerminal(sessionId: string): void {
   removeContextSession(sessionId);
 }
 
+export function showWorkspacePtyExitOverlay(sessionId: string, exitCode: number): void {
+  const instance = instances.get(sessionId);
+  if (!instance || !instance.workspace) return;
+  instance.spawned = false;
+  instance.workspaceLaunchCleanup?.();
+  instance.workspaceLaunchCleanup = null;
+
+  const existing = instance.element.querySelector('.terminal-exit-overlay');
+  if (existing) existing.remove();
+
+  const { devName, projectName } = instance.workspace;
+  const overlay = document.createElement('div');
+  overlay.className = 'terminal-exit-overlay';
+
+  const msg = document.createElement('div');
+  msg.className = 'terminal-exit-message';
+  msg.innerHTML = `
+    <div style="margin-bottom:6px">Workspace disconnected (exit ${exitCode})</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">
+      dev-${devName} / ws-${projectName}-0<br>
+      The container may be stopped or the connection failed.
+    </div>
+  `;
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;justify-content:center';
+
+  const reconnectBtn = document.createElement('button');
+  reconnectBtn.className = 'respawn-btn';
+  reconnectBtn.textContent = 'Reconnect';
+  reconnectBtn.addEventListener('click', () => {
+    overlay.remove();
+    instance.firstConnect = false;
+    spawnTerminal(sessionId);
+  });
+
+  const startBtn = document.createElement('button');
+  startBtn.className = 'respawn-btn';
+  startBtn.textContent = 'Start Container';
+  startBtn.style.cssText = 'background:var(--bg-tertiary);color:var(--text-secondary)';
+  startBtn.addEventListener('click', async () => {
+    startBtn.textContent = 'Starting…';
+    startBtn.disabled = true;
+    reconnectBtn.disabled = true;
+    try {
+      await window.vibeyard.workspace.scalePod(devName, projectName, 1);
+      await window.vibeyard.workspace.waitForPod(devName, projectName);
+    } catch {
+      // ignore — attempt reconnect anyway
+    }
+    overlay.remove();
+    instance.firstConnect = false;
+    spawnTerminal(sessionId);
+  });
+
+  btnRow.appendChild(reconnectBtn);
+  btnRow.appendChild(startBtn);
+  msg.appendChild(btnRow);
+  overlay.appendChild(msg);
+  instance.element.appendChild(overlay);
+}
+
 function formatTokens(n: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   return String(n);

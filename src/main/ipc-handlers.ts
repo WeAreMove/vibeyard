@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
 import { spawnPty, spawnShellPty, spawnWorkspacePty, writePty, resizePty, killPty, isSilencedExit, getPtyCwd } from './pty-manager';
-import { listWorkspaces, getPodStatus } from './workspace-manager';
+import { listWorkspaces, getPodStatus, scalePod, waitForPod } from './workspace-manager';
 import type { WorkspaceConfig } from '../shared/types';
 import { addMcpServer, removeMcpServer } from './claude-cli';
 import type { McpServerConfig } from './claude-cli';
@@ -171,6 +171,14 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('workspace:podStatus', (_event, devName: string, projectName: string) =>
     getPodStatus(devName, projectName)
+  );
+
+  ipcMain.handle('workspace:scalePod', (_event, devName: string, projectName: string, replicas: number) =>
+    scalePod(devName, projectName, replicas)
+  );
+
+  ipcMain.handle('workspace:waitForPod', (_event, devName: string, projectName: string) =>
+    waitForPod(devName, projectName)
   );
 
   ipcMain.on('pty:write', (_event, sessionId: string, data: string) => {

@@ -3,7 +3,7 @@ import { initSidebar, promptNewProject } from './components/sidebar.js';
 import { initTabBar } from './components/tab-bar.js';
 import { initSplitLayout } from './components/split-layout.js';
 import { initKeybindings } from './keybindings.js';
-import { handlePtyData, destroyTerminal, updateCostDisplay, updateContextDisplay } from './components/terminal-pane.js';
+import { handlePtyData, destroyTerminal, updateCostDisplay, updateContextDisplay, showWorkspacePtyExitOverlay } from './components/terminal-pane.js';
 import { setIdle, setHookStatus, notifyInterrupt } from './session-activity.js';
 import { parseCost, setCostData, onChange as onCostChange } from './session-cost.js';
 import { parseTitle, clearSession as clearTitleSession } from './session-title.js';
@@ -138,9 +138,13 @@ async function main(): Promise<void> {
       // Auto-close the session when CLI exits (skip during app quit to preserve session state)
       const project = appState.projects.find(p => p.sessions.some(s => s.id === sessionId));
       if (project) {
-        destroyTerminal(sessionId);
-        clearTitleSession(sessionId);
-        appState.removeSession(project.id, sessionId);
+        if (project.workspace) {
+          showWorkspacePtyExitOverlay(sessionId, exitCode);
+        } else {
+          destroyTerminal(sessionId);
+          clearTitleSession(sessionId);
+          appState.removeSession(project.id, sessionId);
+        }
       }
     }
   });

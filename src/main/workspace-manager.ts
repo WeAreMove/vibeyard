@@ -72,6 +72,39 @@ export function getPodStatus(devName: string, projectName: string): Promise<'run
   });
 }
 
+export function scalePod(devName: string, projectName: string, replicas: number): Promise<void> {
+  const namespace = workspaceNamespace(devName);
+  const statefulset = `ws-${projectName}`;
+  return new Promise((resolve, reject) => {
+    execFile(
+      'kubectl', ['scale', 'statefulset', statefulset, '-n', namespace, `--replicas=${replicas}`],
+      { env: process.env, timeout: 15000 },
+      (err) => { err ? reject(err) : resolve(); }
+    );
+  });
+}
+
+export function waitForPod(devName: string, projectName: string, timeoutMs = 120000): Promise<void> {
+  const namespace = workspaceNamespace(devName);
+  const podName = workspacePodName(projectName);
+  const deadline = Date.now() + timeoutMs;
+
+  return new Promise((resolve, reject) => {
+    const poll = () => {
+      if (Date.now() > deadline) { reject(new Error('Timed out waiting for pod')); return; }
+      execFile(
+        'kubectl', ['get', 'pod', podName, '-n', namespace, '-o', 'jsonpath={.status.phase}'],
+        { env: process.env, timeout: 5000 },
+        (err, stdout) => {
+          if (!err && stdout.trim() === 'Running') { resolve(); return; }
+          setTimeout(poll, 3000);
+        }
+      );
+    };
+    poll();
+  });
+}
+
 export function buildWorkspaceKubectlArgs(
   workspace: WorkspaceConfig,
   tmuxSessionName: string,
