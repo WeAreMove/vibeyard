@@ -148,14 +148,13 @@ export function registerIpcHandlers(): void {
     );
   });
 
-  ipcMain.handle('pty:createWorkspace', async (_event, sessionId: string, workspace: WorkspaceConfig, extraArgs: string) => {
+  ipcMain.handle('pty:createWorkspace', async (_event, sessionId: string, workspace: WorkspaceConfig) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return;
 
     await spawnWorkspacePty(
       sessionId,
       workspace,
-      extraArgs,
       (data) => {
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) w.webContents.send('pty:data', sessionId, data);

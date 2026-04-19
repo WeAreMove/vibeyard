@@ -4,7 +4,7 @@ import type { CostData, ProviderConfig, GitWorktree, McpResult, ProviderId, CliP
 export interface VibeyardApi {
   pty: {
     create(sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs?: string, providerId?: ProviderId, initialPrompt?: string): Promise<void>;
-    createWorkspace(sessionId: string, workspace: WorkspaceConfig, extraArgs?: string): Promise<void>;
+    createWorkspace(sessionId: string, workspace: WorkspaceConfig): Promise<void>;
     createShell(sessionId: string, cwd: string): Promise<void>;
     write(sessionId: string, data: string): void;
     resize(sessionId: string, cols: number, rows: number): void;

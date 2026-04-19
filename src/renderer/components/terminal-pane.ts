@@ -29,6 +29,8 @@ interface TerminalInstance {
   pendingPrompt: string | null;
   pendingPromptTimer: ReturnType<typeof setTimeout> | null;
   workspace?: WorkspaceConfig;
+  firstConnect: boolean;
+  workspaceLaunchCleanup: (() => void) | null;
 }
 
 const instances = new Map<string, TerminalInstance>();
@@ -43,6 +45,7 @@ export function createTerminalPane(
   providerId: ProviderId = 'claude',
   projectId?: string,
   workspace?: WorkspaceConfig,
+  firstConnect: boolean = false,
 ): TerminalInstance {
   if (instances.has(sessionId)) {
     return instances.get(sessionId)!;
@@ -141,6 +144,8 @@ export function createTerminalPane(
     pendingPrompt: null,
     pendingPromptTimer: null,
     workspace,
+    firstConnect,
+    workspaceLaunchCleanup: null,
   };
 
   instances.set(sessionId, instance);
@@ -214,7 +219,31 @@ export async function spawnTerminal(sessionId: string): Promise<void> {
   }
   initSession(sessionId);
   if (instance.workspace) {
-    await window.vibeyard.pty.createWorkspace(sessionId, instance.workspace, instance.args);
+    await window.vibeyard.pty.createWorkspace(sessionId, instance.workspace);
+    if (instance.firstConnect) {
+      // Auto-launch claude once the shell prompt is ready (quiet-period detection).
+      // We watch for data bursts settling — 1500ms of silence means the prompt appeared.
+      const claudeCmd = instance.args ? `claude ${instance.args}` : 'claude';
+      let quietTimer: ReturnType<typeof setTimeout> | null = null;
+      let launched = false;
+      const unsub = window.vibeyard.pty.onData((sid) => {
+        if (sid !== sessionId || launched) return;
+        if (quietTimer) clearTimeout(quietTimer);
+        quietTimer = setTimeout(() => {
+          if (!launched) {
+            launched = true;
+            unsub();
+            instance.workspaceLaunchCleanup = null;
+            window.vibeyard.pty.write(sessionId, claudeCmd + '\r');
+          }
+        }, 1500);
+      });
+      instance.workspaceLaunchCleanup = () => {
+        launched = true;
+        if (quietTimer) clearTimeout(quietTimer);
+        unsub();
+      };
+    }
   } else {
     let initialPrompt: string | undefined;
     if (instance.pendingPrompt && getProviderCapabilities(instance.providerId)?.pendingPromptTrigger === 'startup-arg') {
@@ -336,6 +365,7 @@ export function destroyTerminal(sessionId: string): void {
   if (!instance) return;
 
   clearPendingPromptTimer(instance);
+  instance.workspaceLaunchCleanup?.();
   window.vibeyard.pty.kill(sessionId);
   instance.terminal.dispose();
   instance.element.remove();

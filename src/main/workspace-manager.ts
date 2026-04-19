@@ -75,7 +75,6 @@ export function getPodStatus(devName: string, projectName: string): Promise<'run
 export function buildWorkspaceKubectlArgs(
   workspace: WorkspaceConfig,
   tmuxSessionName: string,
-  claudeArgs: string[],
 ): string[] {
   const namespace = workspaceNamespace(workspace.devName);
   const podName = workspacePodName(workspace.projectName);
@@ -84,6 +83,5 @@ export function buildWorkspaceKubectlArgs(
     'tmux', '-S', '/workspace/.tmux.sock',
     'new-session', '-A', '-s', tmuxSessionName,
     '-c', '/workspace',
-    '--', 'claude', ...claudeArgs,
   ];
 }

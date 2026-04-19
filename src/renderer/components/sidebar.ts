@@ -133,19 +133,27 @@ export function promptNewProject(): void {
     { label: 'Container Project (optional)', id: 'workspace-project', placeholder: 'e.g. travelyo' },
   ], async (values) => {
     const name = values['project-name']?.trim();
-    const rawPath = values['project-path']?.trim();
-    if (!name || !rawPath) return;
-
-    const projectPath = await window.vibeyard.fs.expandPath(rawPath);
-    const isDir = await window.vibeyard.fs.isDirectory(projectPath);
-    if (!isDir) {
-      setModalError('project-path', 'Directory does not exist');
-      return;
-    }
-
     const devName = values['workspace-dev']?.trim();
     const workspaceProject = values['workspace-project']?.trim();
     const workspace = devName && workspaceProject ? { devName, projectName: workspaceProject } : undefined;
+
+    if (!name) return;
+
+    let projectPath: string;
+    if (workspace) {
+      // For workspace projects the local path is optional — default to container root
+      const rawPath = values['project-path']?.trim();
+      projectPath = rawPath ? await window.vibeyard.fs.expandPath(rawPath) : '/workspace';
+    } else {
+      const rawPath = values['project-path']?.trim();
+      if (!rawPath) return;
+      projectPath = await window.vibeyard.fs.expandPath(rawPath);
+      const isDir = await window.vibeyard.fs.isDirectory(projectPath);
+      if (!isDir) {
+        setModalError('project-path', 'Directory does not exist');
+        return;
+      }
+    }
 
     closeModal();
     appState.addProject(name, projectPath, workspace);

@@ -320,7 +320,6 @@ export function spawnShellPty(
 export async function spawnWorkspacePty(
   sessionId: string,
   workspace: WorkspaceConfig,
-  extraArgs: string,
   onData: (data: string) => void,
   onExit: (exitCode: number, signal?: number) => void,
 ): Promise<void> {
@@ -329,8 +328,7 @@ export async function spawnWorkspacePty(
     killPty(sessionId);
   }
 
-  const claudeArgs = extraArgs ? extraArgs.split(/\s+/).filter(Boolean) : [];
-  const kubectlArgs = buildWorkspaceKubectlArgs(workspace, sessionId, claudeArgs);
+  const kubectlArgs = buildWorkspaceKubectlArgs(workspace, sessionId);
 
   const env = { ...process.env, PATH: getFullPath() };
 
