@@ -84,7 +84,7 @@ function render(): void {
     const el = document.createElement('div');
     el.className = 'project-item' + (project.id === appState.activeProjectId ? ' active' : '');
     const workspaceBadge = project.workspace
-      ? ` <span class="workspace-badge" title="dev-${esc(project.workspace.devName)} / ws-${esc(project.workspace.projectName)}-0">&#9729;</span>`
+      ? ` <span class="workspace-badge" title="${esc(`dev-${project.workspace.devName} / ws-${project.workspace.projectName}-0${project.workspace.remoteFolder ? ` @ ${project.workspace.remoteFolder}` : ''}`)}">&#9729;</span>`
       : '';
     el.innerHTML = `
       <div style="flex:1;min-width:0">
@@ -131,11 +131,15 @@ export function promptNewProject(): void {
     },
     { label: 'Dev Namespace (optional)', id: 'workspace-dev', placeholder: 'e.g. yoni' },
     { label: 'Container Project (optional)', id: 'workspace-project', placeholder: 'e.g. travelyo' },
+    { label: 'Remote Folder (optional)', id: 'workspace-remote-folder', placeholder: '/workspace' },
+    { label: 'Kubectl Context (optional)', id: 'workspace-context', placeholder: 'e.g. arn:aws:eks:...' },
   ], async (values) => {
     const name = values['project-name']?.trim();
     const devName = values['workspace-dev']?.trim();
     const workspaceProject = values['workspace-project']?.trim();
-    const workspace = devName && workspaceProject ? { devName, projectName: workspaceProject } : undefined;
+    const remoteFolder = values['workspace-remote-folder']?.trim() || undefined;
+    const kubectlContext = values['workspace-context']?.trim() || undefined;
+    const workspace = devName && workspaceProject ? { devName, projectName: workspaceProject, remoteFolder, kubectlContext } : undefined;
 
     if (!name) return;
 

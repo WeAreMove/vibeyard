@@ -130,6 +130,8 @@ export interface ProjectInsightsData {
 export interface WorkspaceConfig {
   devName: string;
   projectName: string;
+  kubectlContext?: string;
+  remoteFolder?: string;
 }
 
 export interface WorkspacePodInfo {

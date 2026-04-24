@@ -167,18 +167,18 @@ export function registerIpcHandlers(): void {
     );
   });
 
-  ipcMain.handle('workspace:list', () => listWorkspaces());
+  ipcMain.handle('workspace:list', (_event, context?: string) => listWorkspaces(context));
 
-  ipcMain.handle('workspace:podStatus', (_event, devName: string, projectName: string) =>
-    getPodStatus(devName, projectName)
+  ipcMain.handle('workspace:podStatus', (_event, devName: string, projectName: string, context?: string) =>
+    getPodStatus(devName, projectName, context)
   );
 
-  ipcMain.handle('workspace:scalePod', (_event, devName: string, projectName: string, replicas: number) =>
-    scalePod(devName, projectName, replicas)
+  ipcMain.handle('workspace:scalePod', (_event, devName: string, projectName: string, replicas: number, context?: string) =>
+    scalePod(devName, projectName, replicas, context)
   );
 
-  ipcMain.handle('workspace:waitForPod', (_event, devName: string, projectName: string) =>
-    waitForPod(devName, projectName)
+  ipcMain.handle('workspace:waitForPod', (_event, devName: string, projectName: string, context?: string) =>
+    waitForPod(devName, projectName, undefined, context)
   );
 
   ipcMain.on('pty:write', (_event, sessionId: string, data: string) => {

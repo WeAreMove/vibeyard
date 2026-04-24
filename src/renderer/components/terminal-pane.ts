@@ -223,7 +223,9 @@ export async function spawnTerminal(sessionId: string): Promise<void> {
     if (instance.firstConnect) {
       // Auto-launch claude once the shell prompt is ready (quiet-period detection).
       // We watch for data bursts settling — 1500ms of silence means the prompt appeared.
-      const claudeCmd = instance.args ? `claude ${instance.args}` : 'claude';
+      const remoteFolder = instance.workspace.remoteFolder;
+      const claudeBase = instance.args ? `claude ${instance.args} --dangerously-skip-permissions` : 'claude --dangerously-skip-permissions';
+      const claudeCmd = remoteFolder ? `cd ${remoteFolder} && ${claudeBase}` : claudeBase;
       let quietTimer: ReturnType<typeof setTimeout> | null = null;
       let launched = false;
       const unsub = window.vibeyard.pty.onData((sid) => {
