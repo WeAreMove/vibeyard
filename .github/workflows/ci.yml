@@ -10,7 +10,7 @@ jobs:
   build-and-test:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, moverunner, windows-latest]
     runs-on: ${{ matrix.os }}
 
     steps:

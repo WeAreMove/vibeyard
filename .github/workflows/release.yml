@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: moverunner
     outputs:
       tag: ${{ steps.get-tag.outputs.tag }}
     steps:
@@ -162,7 +162,7 @@ jobs:
 
   build-linux:
     needs: [prepare]
-    runs-on: ubuntu-latest
+    runs-on: moverunner
 
     steps:
       - uses: actions/checkout@v4
@@ -222,7 +222,7 @@ jobs:
 
   publish-npm:
     needs: [prepare, build, build-linux, build-windows]
-    runs-on: ubuntu-latest
+    runs-on: moverunner
     steps:
       - uses: actions/checkout@v4
         with:

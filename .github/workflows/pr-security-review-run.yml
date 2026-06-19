@@ -13,7 +13,7 @@ permissions:
 jobs:
   security-review:
     if: github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
+    runs-on: moverunner
     steps:
       - uses: actions/checkout@v4
         with:
